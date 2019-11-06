@@ -2,6 +2,7 @@
 
 namespace rickcy\rabbitmq\components;
 
+use PhpAmqpLib\Connection\AbstractConnection;
 use rickcy\rabbitmq\events\RabbitMQPublisherEvent;
 use rickcy\rabbitmq\exceptions\RuntimeException;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -11,6 +12,8 @@ use PhpAmqpLib\Wire\AMQPTable;
  * Service that sends AMQP Messages
  *
  * @package rickcy\rabbitmq\components
+ *
+ * @property array $basicProperties
  */
 class Producer extends BaseRabbitMQ
 {
@@ -23,6 +26,34 @@ class Producer extends BaseRabbitMQ
     protected $safe;
 
     protected $name = 'unnamed';
+
+    /**
+     * Producer constructor.
+     * @param AbstractConnection $conn
+     * @param Routing $routing
+     * @param Logger $logger
+     * @param bool $autoDeclare
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function __construct(AbstractConnection $conn, Routing $routing, Logger $logger, bool $autoDeclare)
+    {
+        parent::__construct($conn, $routing, $logger, $autoDeclare);
+
+        $this->additionalProperties = \Yii::createObject([
+            'class' => AdditionalProperties::class,
+        ]);
+    }
+
+
+    public function getAdditionalProperties()
+    {
+        return $this->additionalProperties;
+    }
+
+    /**
+     * @var AdditionalProperties
+     */
+    protected $additionalProperties;
 
     /**
      * @param $contentType
@@ -51,7 +82,7 @@ class Producer extends BaseRabbitMQ
     /**
      * @return callable
      */
-    public function getSerializer() : callable
+    public function getSerializer(): callable
     {
         return $this->serializer;
     }
@@ -59,7 +90,7 @@ class Producer extends BaseRabbitMQ
     /**
      * @return array
      */
-    public function getBasicProperties() : array
+    public function getBasicProperties(): array
     {
         return [
             'content_type' => $this->contentType,
@@ -70,7 +101,7 @@ class Producer extends BaseRabbitMQ
     /**
      * @return mixed
      */
-    public function getSafe() : bool
+    public function getSafe(): bool
     {
         return $this->safe;
     }
@@ -86,7 +117,7 @@ class Producer extends BaseRabbitMQ
     /**
      * @return string
      */
-    public function getName() : string
+    public function getName(): string
     {
         return $this->name;
     }
@@ -114,7 +145,8 @@ class Producer extends BaseRabbitMQ
         AdditionalProperties $additionalProperties,
         string $routingKey = '',
         array $headers = null
-    ) {
+    )
+    {
         if ($this->autoDeclare) {
             $this->routing->declareAll();
         }
@@ -128,7 +160,7 @@ class Producer extends BaseRabbitMQ
             $msgBody = call_user_func($this->serializer, $msgBody);
             $serialized = true;
         }
-        $msg = new AMQPMessage($msgBody, array_merge($this->getBasicProperties(), $additionalProperties->properties));
+        $msg = new AMQPMessage($msgBody, array_merge($this->getBasicProperties(), $this->additionalProperties->properties));
 
         if (!empty($headers) || $serialized) {
             if ($serialized) {

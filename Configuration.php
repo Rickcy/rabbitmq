@@ -11,8 +11,13 @@ use PhpAmqpLib\Connection\AMQPLazyConnection;
 use yii\base\Component;
 use yii\helpers\ArrayHelper;
 
+/**
+ *
+ * @property \rickcy\rabbitmq\Configuration $config
+ */
 class Configuration extends Component
 {
+
     const CONNECTION_SERVICE_NAME = 'rabbit_mq.connection.%s';
     const CONSUMER_SERVICE_NAME = 'rabbit_mq.consumer.%s';
     const PRODUCER_SERVICE_NAME = 'rabbit_mq.producer.%s';
@@ -21,6 +26,7 @@ class Configuration extends Component
 
     const DEFAULT_CONNECTION_NAME = 'default';
     const EXTENSION_CONTROLLER_ALIAS = 'rabbitmq';
+
     /**
      * Extension configuration default values
      * @var array
@@ -130,9 +136,9 @@ class Configuration extends Component
      * @return Configuration
      * @throws InvalidConfigException
      */
-    public function getConfig() : Configuration
+    public function getConfig(): Configuration
     {
-        if(!$this->isLoaded) {
+        if (!$this->isLoaded) {
             $this->normalizeConnections();
             $this->validate();
             $this->completeWithDefaults();
@@ -147,7 +153,7 @@ class Configuration extends Component
      * @param string $connectionName
      * @return AbstractConnection
      */
-    public function getConnection(string $connectionName = '') : AbstractConnection
+    public function getConnection(string $connectionName = ''): AbstractConnection
     {
         if ('' === $connectionName) {
             $connectionName = self::DEFAULT_CONNECTION_NAME;
@@ -161,7 +167,7 @@ class Configuration extends Component
      * @param string $producerName
      * @return Producer
      */
-    public function getProducer(string $producerName) : Producer
+    public function getProducer(string $producerName): Producer
     {
         return \Yii::$container->get(sprintf(self::PRODUCER_SERVICE_NAME, $producerName));
     }
@@ -171,7 +177,7 @@ class Configuration extends Component
      * @param string $consumerName
      * @return Consumer
      */
-    public function getConsumer(string $consumerName) : Consumer
+    public function getConsumer(string $consumerName): Consumer
     {
         return \Yii::$container->get(sprintf(self::CONSUMER_SERVICE_NAME, $consumerName));
     }
@@ -180,7 +186,7 @@ class Configuration extends Component
      * Get routing service
      * @return Routing
      */
-    public function getRouting(AbstractConnection $connection) : Routing
+    public function getRouting(AbstractConnection $connection): Routing
     {
         return \Yii::$container->get(Configuration::ROUTING_SERVICE_NAME, ['conn' => $connection]);
     }
@@ -439,7 +445,7 @@ class Configuration extends Component
      */
     private function isNameExist(array $multidimentional, string $name)
     {
-        if($name == '') {
+        if ($name == '') {
             foreach ($multidimentional as $item) {
                 if (!isset($item['name'])) {
                     return true;

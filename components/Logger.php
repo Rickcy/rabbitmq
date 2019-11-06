@@ -3,12 +3,13 @@
 namespace rickcy\rabbitmq\components;
 
 use PhpAmqpLib\Message\AMQPMessage;
+use yii\base\BaseObject;
 use yii\helpers\Console;
 
 /**
  * @codeCoverageIgnore
  */
-class Logger
+class Logger extends BaseObject
 {
     public $options;
 

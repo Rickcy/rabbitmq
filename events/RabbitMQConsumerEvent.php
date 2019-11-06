@@ -2,6 +2,8 @@
 
 namespace rickcy\rabbitmq\events;
 
+use PhpAmqpLib\Message\AMQPMessage;
+use rickcy\rabbitmq\components\Consumer;
 use yii\base\Event;
 
 class RabbitMQConsumerEvent extends Event

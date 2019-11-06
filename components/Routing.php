@@ -6,9 +6,14 @@ use rickcy\rabbitmq\exceptions\RuntimeException;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AbstractConnection;
 use PhpAmqpLib\Exception\AMQPProtocolChannelException;
+use yii\base\BaseObject;
 use yii\helpers\ArrayHelper;
 
-class Routing
+/**
+ *
+ * @property \PhpAmqpLib\Channel\AMQPChannel $channel
+ */
+class Routing extends BaseObject
 {
     protected $queues = [];
     protected $exchanges = [];
@@ -33,6 +38,7 @@ class Routing
      */
     public function __construct(AbstractConnection $conn)
     {
+        parent::__construct();
         $this->conn = $conn;
     }
 
@@ -65,7 +71,7 @@ class Routing
      * @return bool
      * @throws RuntimeException
      */
-    public function declareAll() : bool
+    public function declareAll(): bool
     {
         if (!$this->isDeclared) {
             foreach (array_keys($this->exchanges) as $name) {
@@ -89,11 +95,11 @@ class Routing
      */
     public function declareQueue(string $queueName)
     {
-        if(!isset($this->queues[$queueName])) {
+        if (!isset($this->queues[$queueName])) {
             throw new RuntimeException("Queue `{$queueName}` is not configured.");
         }
 
-        $channel = 
+        $channel =
         $queue = $this->queues[$queueName];
         if (!isset($this->queuesDeclared[$queueName])) {
             if (ArrayHelper::isAssociative($queue)) {
@@ -187,7 +193,7 @@ class Routing
      */
     public function declareExchange(string $exchangeName)
     {
-        if(!isset($this->exchanges[$exchangeName])) {
+        if (!isset($this->exchanges[$exchangeName])) {
             throw new RuntimeException("Exchange `{$exchangeName}` is not configured.");
         }
         $exchange = $this->exchanges[$exchangeName];
@@ -265,7 +271,7 @@ class Routing
      * @param string $exchangeName
      * @return bool
      */
-    public function isExchangeExists(string $exchangeName) : bool
+    public function isExchangeExists(string $exchangeName): bool
     {
         try {
             $this->getChannel()->exchange_declare($exchangeName, null, true);
@@ -281,7 +287,7 @@ class Routing
      * @param string $queueName
      * @return bool
      */
-    public function isQueueExists(string $queueName) : bool
+    public function isQueueExists(string $queueName): bool
     {
         try {
             $this->getChannel()->queue_declare($queueName, true);
@@ -296,11 +302,11 @@ class Routing
      * @param array $unnamedArr
      * @return array
      */
-    private function arrangeByName(array $unnamedArr) : array
+    private function arrangeByName(array $unnamedArr): array
     {
         $namedArr = [];
         foreach ($unnamedArr as $elem) {
-            if('' === $elem['name']) {
+            if ('' === $elem['name']) {
                 $namedArr[$elem['name']][] = $elem;
             } else {
                 $namedArr[$elem['name']] = $elem;

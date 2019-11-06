@@ -3,8 +3,9 @@
 namespace rickcy\rabbitmq\components;
 
 use PhpAmqpLib\Connection\AbstractConnection;
+use yii\base\BaseObject;
 
-class AbstractConnectionFactory
+class AbstractConnectionFactory extends BaseObject
 {
     /** @var \ReflectionClass */
     private $_class;
@@ -20,6 +21,7 @@ class AbstractConnectionFactory
      */
     public function __construct($class, array $parameters)
     {
+        parent::__construct();
         $this->_class = $class;
         $this->_parameters = $this->parseUrl($parameters);
     }
@@ -27,7 +29,7 @@ class AbstractConnectionFactory
     /**
      * @return mixed
      */
-    public function createConnection() : AbstractConnection
+    public function createConnection(): AbstractConnection
     {
         return new $this->_class(
             $this->_parameters['host'],

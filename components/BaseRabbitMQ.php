@@ -4,8 +4,13 @@ namespace rickcy\rabbitmq\components;
 
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AbstractConnection;
+use yii\base\BaseObject;
 
-abstract class BaseRabbitMQ
+/**
+ *
+ * @property \PhpAmqpLib\Channel\AMQPChannel $channel
+ */
+abstract class BaseRabbitMQ extends BaseObject
 {
     /**
      * @var \PhpAmqpLib\Connection\AbstractConnection
@@ -36,6 +41,7 @@ abstract class BaseRabbitMQ
      */
     public function __construct(AbstractConnection $conn, Routing $routing, Logger $logger, bool $autoDeclare)
     {
+        parent::__construct();
         $this->conn = $conn;
         $this->routing = $routing;
         $this->logger = $logger;
