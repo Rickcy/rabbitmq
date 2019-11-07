@@ -136,13 +136,11 @@ class Producer extends BaseRabbitMQ
      * @param mixed $msgBody
      * @param string $exchangeName
      * @param string $routingKey
-     * @param \rickcy\rabbitmq\components\AdditionalProperties $additionalProperties
      * @param array $headers
      */
     public function publish(
         $msgBody,
         string $exchangeName,
-        AdditionalProperties $additionalProperties,
         string $routingKey = '',
         array $headers = null
     )
