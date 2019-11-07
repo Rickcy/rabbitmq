@@ -32,7 +32,7 @@ class Configuration extends Component
      * @var array
      */
     const DEFAULTS = [
-        'auto_declare' => true,
+        'auto_declare' => false,
         'connections' => [
             [
                 'name' => self::DEFAULT_CONNECTION_NAME,
