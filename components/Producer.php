@@ -3,10 +3,10 @@
 namespace rickcy\rabbitmq\components;
 
 use PhpAmqpLib\Connection\AbstractConnection;
-use rickcy\rabbitmq\events\RabbitMQPublisherEvent;
-use rickcy\rabbitmq\exceptions\RuntimeException;
 use PhpAmqpLib\Message\AMQPMessage;
 use PhpAmqpLib\Wire\AMQPTable;
+use rickcy\rabbitmq\events\RabbitMQPublisherEvent;
+use rickcy\rabbitmq\exceptions\RuntimeException;
 
 /**
  * Service that sends AMQP Messages
@@ -40,7 +40,7 @@ class Producer extends BaseRabbitMQ
         parent::__construct($conn, $routing, $logger, $autoDeclare);
 
         $this->additionalProperties = \Yii::createObject([
-            'class' => AdditionalProperties::class,
+            'class' => Properties::class,
         ]);
     }
 
