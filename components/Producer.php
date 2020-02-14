@@ -2,6 +2,7 @@
 
 namespace rickcy\rabbitmq\components;
 
+use JsonSerializable;
 use PhpAmqpLib\Connection\AbstractConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use PhpAmqpLib\Wire\AMQPTable;
@@ -109,7 +110,7 @@ class Producer extends BaseRabbitMQ
     /**
      * @param mixed $safe
      */
-    public function setSafe(bool $safe)
+    public function setSafe(bool $safe): void
     {
         $this->safe = $safe;
     }
@@ -125,7 +126,7 @@ class Producer extends BaseRabbitMQ
     /**
      * @param string $name
      */
-    public function setName(string $name)
+    public function setName(string $name): void
     {
         $this->name = $name;
     }
@@ -133,7 +134,7 @@ class Producer extends BaseRabbitMQ
     /**
      * Publishes the message and merges additional properties with basic properties
      *
-     * @param mixed $msgBody
+     * @param JsonSerializable|array $msgBody
      * @param string $exchangeName
      * @param string $routingKey
      * @param array $headers
@@ -143,7 +144,7 @@ class Producer extends BaseRabbitMQ
         string $exchangeName,
         string $routingKey = '',
         array $headers = null
-    )
+    ): void
     {
         if ($this->autoDeclare) {
             $this->routing->declareAll();
