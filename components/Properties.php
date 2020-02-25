@@ -9,4 +9,14 @@ namespace rickcy\rabbitmq\components;
 
 class Properties extends AdditionalProperties
 {
+
+    /**
+     * Properties constructor.
+     */
+    public function __construct($config = [])
+    {
+        foreach ($config as $name => $value) {
+            $this->$name = $value;
+        }
+    }
 }
