@@ -9,5 +9,4 @@ namespace rickcy\rabbitmq\components;
 
 class Properties extends AdditionalProperties
 {
-
 }

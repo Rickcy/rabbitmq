@@ -12,7 +12,12 @@ use PhpAmqpLib\Connection\AbstractConnection;
 
 class DependencyInjectionTest extends TestCase
 {
-    public function testBootstrap()
+    /**
+     * @throws InvalidConfigException
+     * @throws \yii\base\InvalidConfigException
+     * @throws \Exception
+     */
+    public function testBootstrap() : void
     {
         $name = 'test';
         $callbackName = 'CallbackMock';

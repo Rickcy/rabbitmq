@@ -9,10 +9,7 @@ use PhpAmqpLib\Exception\AMQPProtocolChannelException;
 use yii\base\BaseObject;
 use yii\helpers\ArrayHelper;
 
-/**
- *
- * @property \PhpAmqpLib\Channel\AMQPChannel $channel
- */
+
 class Routing extends BaseObject
 {
     protected $queues = [];
@@ -41,6 +38,26 @@ class Routing extends BaseObject
         parent::__construct();
         $this->conn = $conn;
     }
+
+    /**
+     * @return array
+     */
+    public function getQueuesDeclared(): array
+    {
+        return $this->queuesDeclared;
+    }
+
+    /**
+     * @param AMQPChannel $ch
+     */
+    public function setChannel(AMQPChannel $ch): void
+    {
+        $this->ch = $ch;
+    }
+
+
+
+
 
     /**
      * @param array $queues
@@ -99,11 +116,10 @@ class Routing extends BaseObject
             throw new RuntimeException("Queue `{$queueName}` is not configured.");
         }
 
-        $channel =
         $queue = $this->queues[$queueName];
         if (!isset($this->queuesDeclared[$queueName])) {
             if (ArrayHelper::isAssociative($queue)) {
-                $this->getChannel()->queue_declare(
+                [$callback_queue, ,] =   $this->getChannel()->queue_declare(
                     $queue['name'],
                     $queue['passive'],
                     $queue['durable'],
@@ -115,7 +131,7 @@ class Routing extends BaseObject
                 );
             } else {
                 foreach ($queue as $q) {
-                    $this->getChannel()->queue_declare(
+                    [$callback_queue, ,] =$this->getChannel()->queue_declare(
                         $q['name'],
                         $q['passive'],
                         $q['durable'],
@@ -127,7 +143,7 @@ class Routing extends BaseObject
                     );
                 }
             }
-            $this->queuesDeclared[$queueName] = true;
+            $this->queuesDeclared[$queueName] = $callback_queue;
         }
     }
 

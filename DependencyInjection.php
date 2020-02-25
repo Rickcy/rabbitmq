@@ -5,11 +5,14 @@ namespace rickcy\rabbitmq;
 use rickcy\rabbitmq\components\{
     AbstractConnectionFactory, Consumer, ConsumerInterface, Logger, Producer, Routing
 };
+use Exception;
 use rickcy\rabbitmq\controllers\RabbitMQController;
 use rickcy\rabbitmq\exceptions\InvalidConfigException;
 use PhpAmqpLib\Connection\AbstractConnection;
+use Yii;
 use yii\base\Application;
 use yii\base\BootstrapInterface;
+use yii\di\Container;
 
 class DependencyInjection implements BootstrapInterface
 {
@@ -25,7 +28,7 @@ class DependencyInjection implements BootstrapInterface
      * @param Application $app
      *
      */
-    public function bootstrap($app)
+    public function bootstrap($app): void
     {
         $config = $app->rabbitmq->getConfig();
         $this->registerLogger($config);
@@ -41,9 +44,9 @@ class DependencyInjection implements BootstrapInterface
      *
      * @param $config
      */
-    private function registerLogger($config)
+    private function registerLogger($config): void
     {
-        \Yii::$container->setSingleton(Configuration::LOGGER_SERVICE_NAME, ['class' => Logger::class, 'options' => $config->logger]);
+        Yii::$container->setSingleton(Configuration::LOGGER_SERVICE_NAME, ['class' => Logger::class, 'options' => $config->logger]);
     }
 
     /**
@@ -51,12 +54,13 @@ class DependencyInjection implements BootstrapInterface
      *
      * @param Configuration $config
      */
-    protected function registerConnections(Configuration $config)
+    protected function registerConnections(Configuration $config): void
     {
         foreach ($config->connections as $options) {
             $serviceAlias = sprintf(Configuration::CONNECTION_SERVICE_NAME, $options['name']);
-            \Yii::$container->setSingleton($serviceAlias, function () use ($options) {
-                $factory = \Yii::createObject([
+            Yii::$container->setSingleton($serviceAlias, static function () use ($options) {
+                /** @var AbstractConnectionFactory $factory */
+                $factory = Yii::createObject([
                     'class' => AbstractConnectionFactory::class,
                 ], [
                     $options['type'], $options
@@ -72,17 +76,17 @@ class DependencyInjection implements BootstrapInterface
      *
      * @param Configuration $config
      */
-    protected function registerRouting(Configuration $config)
+    protected function registerRouting(Configuration $config): void
     {
-        \Yii::$container->setSingleton(Configuration::ROUTING_SERVICE_NAME, function ($container, $params) use ($config) {
-            $routing = \Yii::createObject([
+        Yii::$container->setSingleton(Configuration::ROUTING_SERVICE_NAME, static function (Container $container, $params) use ($config) {
+            $routing = Yii::createObject([
                 'class' => Routing::class,
             ], [
                 $params['conn']
             ]);
-            \Yii::$container->invoke([$routing, 'setQueues'], [$config->queues]);
-            \Yii::$container->invoke([$routing, 'setExchanges'], [$config->exchanges]);
-            \Yii::$container->invoke([$routing, 'setBindings'], [$config->bindings]);
+            Yii::$container->invoke([$routing, 'setQueues'], [$config->queues]);
+            Yii::$container->invoke([$routing, 'setExchanges'], [$config->exchanges]);
+            Yii::$container->invoke([$routing, 'setBindings'], [$config->bindings]);
 
             return $routing;
         });
@@ -93,25 +97,25 @@ class DependencyInjection implements BootstrapInterface
      *
      * @param Configuration $config
      */
-    protected function registerProducers(Configuration $config)
+    protected function registerProducers(Configuration $config): void
     {
         $autoDeclare = $config->auto_declare;
         foreach ($config->producers as $options) {
             $serviceAlias = sprintf(Configuration::PRODUCER_SERVICE_NAME, $options['name']);
-            \Yii::$container->setSingleton($serviceAlias, function () use ($options, $autoDeclare) {
+            Yii::$container->setSingleton($serviceAlias, static function () use ($options, $autoDeclare) {
                 /**
                  * @var $connection AbstractConnection
                  */
-                $connection = \Yii::$container->get(sprintf(Configuration::CONNECTION_SERVICE_NAME, $options['connection']));
+                $connection = Yii::$container->get(sprintf(Configuration::CONNECTION_SERVICE_NAME, $options['connection']));
                 /**
                  * @var $routing Routing
                  */
-                $routing = \Yii::$container->get(Configuration::ROUTING_SERVICE_NAME, ['conn' => $connection]);
+                $routing = Yii::$container->get(Configuration::ROUTING_SERVICE_NAME, ['conn' => $connection]);
                 /**
                  * @var $logger Logger
                  */
-                $logger = \Yii::$container->get(Configuration::LOGGER_SERVICE_NAME);
-                $producer = \Yii::createObject([
+                $logger = Yii::$container->get(Configuration::LOGGER_SERVICE_NAME);
+                $producer = Yii::createObject([
                     'class' => Producer::class,
                 ], [
                     $connection,
@@ -120,11 +124,12 @@ class DependencyInjection implements BootstrapInterface
                     $autoDeclare,
                 ]);
 
-                \Yii::$container->invoke([$producer, 'setName'], [$options['name']]);
-                \Yii::$container->invoke([$producer, 'setContentType'], [$options['content_type']]);
-                \Yii::$container->invoke([$producer, 'setDeliveryMode'], [$options['delivery_mode']]);
-                \Yii::$container->invoke([$producer, 'setSafe'], [$options['safe']]);
-                \Yii::$container->invoke([$producer, 'setSerializer'], [$options['serializer']]);
+                Yii::$container->invoke([$producer, 'setName'], [$options['name']]);
+                Yii::$container->invoke([$producer, 'setContentType'], [$options['content_type']]);
+                Yii::$container->invoke([$producer, 'setDeliveryMode'], [$options['delivery_mode']]);
+                Yii::$container->invoke([$producer, 'setSafe'], [$options['safe']]);
+                Yii::$container->invoke([$producer, 'setSerializer'], [$options['serializer']]);
+                Yii::$container->invoke([$producer, 'setSerializerParams'], [$options['serializerParams']]);
 
                 return $producer;
             });
@@ -136,37 +141,38 @@ class DependencyInjection implements BootstrapInterface
      *
      * @param Configuration $config
      */
-    protected function registerConsumers(Configuration $config)
+    protected function registerConsumers(Configuration $config): void
     {
         $autoDeclare = $config->auto_declare;
         foreach ($config->consumers as $options) {
             $serviceAlias = sprintf(Configuration::CONSUMER_SERVICE_NAME, $options['name']);
-            \Yii::$container->setSingleton($serviceAlias, function () use ($options, $autoDeclare) {
+            Yii::$container->setSingleton($serviceAlias, function () use ($options, $autoDeclare) {
                 /**
                  * @var $connection AbstractConnection
                  */
-                $connection = \Yii::$container->get(sprintf(Configuration::CONNECTION_SERVICE_NAME, $options['connection']));
+                $connection = Yii::$container->get(sprintf(Configuration::CONNECTION_SERVICE_NAME, $options['connection']));
                 /**
                  * @var $routing Routing
                  */
-                $routing = \Yii::$container->get(Configuration::ROUTING_SERVICE_NAME, ['conn' => $connection]);
+                $routing = Yii::$container->get(Configuration::ROUTING_SERVICE_NAME, ['conn' => $connection]);
                 /**
                  * @var $logger Logger
                  */
-                $logger = \Yii::$container->get(Configuration::LOGGER_SERVICE_NAME);
+                $logger = Yii::$container->get(Configuration::LOGGER_SERVICE_NAME);
                 $consumer = new Consumer($connection, $routing, $logger, $autoDeclare);
                 $queues = [];
                 foreach ($options['callbacks'] as $queueName => $callback) {
                     $callbackClass = $this->getCallbackClass($callback);
                     $queues[$queueName] = [$callbackClass, 'execute'];
                 }
-                \Yii::$container->invoke([$consumer, 'setName'], [$options['name']]);
-                \Yii::$container->invoke([$consumer, 'setQueues'], [$queues]);
-                \Yii::$container->invoke([$consumer, 'setQos'], [$options['qos']]);
-                \Yii::$container->invoke([$consumer, 'setIdleTimeout'], [$options['idle_timeout']]);
-                \Yii::$container->invoke([$consumer, 'setIdleTimeoutExitCode'], [$options['idle_timeout_exit_code']]);
-                \Yii::$container->invoke([$consumer, 'setProceedOnException'], [$options['proceed_on_exception']]);
-                \Yii::$container->invoke([$consumer, 'setDeserializer'], [$options['deserializer']]);
+                Yii::$container->invoke([$consumer, 'setName'], [$options['name']]);
+                Yii::$container->invoke([$consumer, 'setQueues'], [$queues]);
+                Yii::$container->invoke([$consumer, 'setQos'], [$options['qos']]);
+                Yii::$container->invoke([$consumer, 'setIdleTimeout'], [$options['idle_timeout']]);
+                Yii::$container->invoke([$consumer, 'setIdleTimeoutExitCode'], [$options['idle_timeout_exit_code']]);
+                Yii::$container->invoke([$consumer, 'setProceedOnException'], [$options['proceed_on_exception']]);
+                Yii::$container->invoke([$consumer, 'setDeserializer'], [$options['deserializer']]);
+                Yii::$container->invoke([$consumer, 'setDeserializerParams'], [$options['deserializerParams']]);
 
                 return $consumer;
             });
@@ -179,12 +185,12 @@ class DependencyInjection implements BootstrapInterface
      * @param string $callbackName
      *
      * @return ConsumerInterface
-     * @throws InvalidConfigException
+     * @throws Exception
      */
     private function getCallbackClass(string $callbackName): ConsumerInterface
     {
         if (!class_exists($callbackName)) {
-            $callbackClass = \Yii::$container->get($callbackName);
+            $callbackClass = Yii::$container->get($callbackName);
         } else {
             $callbackClass = new $callbackName();
         }
@@ -200,7 +206,7 @@ class DependencyInjection implements BootstrapInterface
      *
      * @param Application $app
      */
-    private function addControllers(Application $app)
+    private function addControllers(Application $app): void
     {
         $app->controllerMap[Configuration::EXTENSION_CONTROLLER_ALIAS] = RabbitMQController::class;
     }

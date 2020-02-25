@@ -4,8 +4,9 @@
 namespace rickcy\rabbitmq\components;
 
 
+use ReflectionClass;
+use ReflectionException;
 use yii\base\BaseObject;
-use yii\base\Model;
 
 /**
  * @property mixed $contentType
@@ -54,7 +55,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $content_type
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setContentType($content_type) : self
     {
@@ -66,7 +67,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $content_encoding
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setContentEncoding($content_encoding) : self
     {
@@ -78,7 +79,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $application_headers
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setApplicationHeaders($application_headers) : self
     {
@@ -90,7 +91,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $delivery_mode
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setDeliveryMode($delivery_mode) : self
     {
@@ -102,7 +103,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $priority
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setPriority($priority) : self
     {
@@ -114,7 +115,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $correlation_id
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setCorrelationId($correlation_id) : self
     {
@@ -126,7 +127,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $reply_to
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setReplyTo($reply_to) : self
     {
@@ -138,7 +139,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $expiration
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setExpiration($expiration) : self
     {
@@ -150,7 +151,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $message_id
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setMessageId($message_id) : self
     {
@@ -162,7 +163,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $timestamp
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setTimestamp($timestamp) : self
     {
@@ -174,7 +175,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $type
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setType($type) : self
     {
@@ -186,7 +187,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $user_id
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setUserId($user_id) : self
     {
@@ -198,7 +199,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $app_id
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setAppId($app_id) : self
     {
@@ -210,7 +211,7 @@ abstract class AdditionalProperties extends BaseObject
     /**
      * @param mixed $cluster_id
      *
-     * @return \rickcy\rabbitmq\components\AdditionalProperties
+     * @return AdditionalProperties
      */
     public function setClusterId($cluster_id) : self
     {
@@ -227,8 +228,9 @@ abstract class AdditionalProperties extends BaseObject
      * If it is an array, only the attributes in the array will be returned.
      * @param array $except list of attributes whose value should NOT be returned.
      * @return array attribute values (name => value).
+     * @throws ReflectionException
      */
-    public function getProperties($names = null, $except = [])
+    public function getProperties($names = null, $except = []): array
     {
         $values = [];
         if ($names === null) {
@@ -250,10 +252,11 @@ abstract class AdditionalProperties extends BaseObject
      * By default, this method returns all public non-static properties of the class.
      * You may override this method to change the default behavior.
      * @return array list of attribute names.
+     * @throws ReflectionException
      */
-    public function attributes()
+    public function attributes(): array
     {
-        $class = new \ReflectionClass($this);
+        $class = new ReflectionClass($this);
         $names = [];
         foreach ($class->getProperties() as $property) {
             if (!$property->isStatic()) {
@@ -263,6 +266,23 @@ abstract class AdditionalProperties extends BaseObject
 
         return $names;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getCorrelationId()
+    {
+        return $this->correlation_id;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getReplyTo()
+    {
+        return $this->reply_to;
+    }
+
 
 
 

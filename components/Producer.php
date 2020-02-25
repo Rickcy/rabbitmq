@@ -2,12 +2,13 @@
 
 namespace rickcy\rabbitmq\components;
 
-use JsonSerializable;
 use PhpAmqpLib\Connection\AbstractConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use PhpAmqpLib\Wire\AMQPTable;
 use rickcy\rabbitmq\events\RabbitMQPublisherEvent;
 use rickcy\rabbitmq\exceptions\RuntimeException;
+use Yii;
+use yii\base\InvalidConfigException;
 
 /**
  * Service that sends AMQP Messages
@@ -24,6 +25,8 @@ class Producer extends BaseRabbitMQ
 
     protected $serializer;
 
+    protected $serializerParams;
+
     protected $safe;
 
     protected $name = 'unnamed';
@@ -34,19 +37,19 @@ class Producer extends BaseRabbitMQ
      * @param Routing $routing
      * @param Logger $logger
      * @param bool $autoDeclare
-     * @throws \yii\base\InvalidConfigException
+     * @throws InvalidConfigException
      */
     public function __construct(AbstractConnection $conn, Routing $routing, Logger $logger, bool $autoDeclare)
     {
         parent::__construct($conn, $routing, $logger, $autoDeclare);
 
-        $this->additionalProperties = \Yii::createObject([
+        $this->additionalProperties = Yii::createObject([
             'class' => Properties::class,
         ]);
     }
 
 
-    public function getAdditionalProperties()
+    public function getAdditionalProperties(): AdditionalProperties
     {
         return $this->additionalProperties;
     }
@@ -59,7 +62,7 @@ class Producer extends BaseRabbitMQ
     /**
      * @param $contentType
      */
-    public function setContentType($contentType)
+    public function setContentType($contentType): void
     {
         $this->contentType = $contentType;
     }
@@ -67,15 +70,32 @@ class Producer extends BaseRabbitMQ
     /**
      * @param $deliveryMode
      */
-    public function setDeliveryMode($deliveryMode)
+    public function setDeliveryMode($deliveryMode): void
     {
         $this->deliveryMode = $deliveryMode;
     }
 
     /**
+     * @return mixed
+     */
+    public function getSerializerParams()
+    {
+        return $this->serializerParams;
+    }
+
+    /**
+     * @param mixed $serializerParams
+     */
+    public function setSerializerParams($serializerParams): void
+    {
+        $this->serializerParams = $serializerParams;
+    }
+
+
+    /**
      * @param callable $serializer
      */
-    public function setSerializer(callable $serializer)
+    public function setSerializer(callable $serializer): void
     {
         $this->serializer = $serializer;
     }
@@ -134,7 +154,7 @@ class Producer extends BaseRabbitMQ
     /**
      * Publishes the message and merges additional properties with basic properties
      *
-     * @param JsonSerializable|array $msgBody
+     * @param mixed $msgBody
      * @param string $exchangeName
      * @param string $routingKey
      * @param array $headers
@@ -159,6 +179,7 @@ class Producer extends BaseRabbitMQ
             $msgBody = call_user_func($this->serializer, $msgBody);
             $serialized = true;
         }
+
         $msg = new AMQPMessage($msgBody, array_merge($this->getBasicProperties(), $this->additionalProperties->properties));
 
         if (!empty($headers) || $serialized) {
@@ -169,7 +190,7 @@ class Producer extends BaseRabbitMQ
             $msg->set('application_headers', $headersTable);
         }
 
-        \Yii::$app->rabbitmq->trigger(
+        Yii::$app->rabbitmq->trigger(
             RabbitMQPublisherEvent::BEFORE_PUBLISH,
             new RabbitMQPublisherEvent(
                 [
@@ -181,7 +202,7 @@ class Producer extends BaseRabbitMQ
 
         $this->getChannel()->basic_publish($msg, $exchangeName, $routingKey);
 
-        \Yii::$app->rabbitmq->trigger(
+        Yii::$app->rabbitmq->trigger(
             RabbitMQPublisherEvent::AFTER_PUBLISH,
             new RabbitMQPublisherEvent(
                 [
@@ -199,5 +220,6 @@ class Producer extends BaseRabbitMQ
                 'routing_key' => $routingKey,
             ]
         );
+
     }
 }

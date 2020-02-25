@@ -2,12 +2,14 @@
 
 namespace rickcy\rabbitmq\components;
 
+use InvalidArgumentException;
 use PhpAmqpLib\Connection\AbstractConnection;
+use ReflectionClass;
 use yii\base\BaseObject;
 
 class AbstractConnectionFactory extends BaseObject
 {
-    /** @var \ReflectionClass */
+    /** @var ReflectionClass */
     private $_class;
 
     /** @var array */
@@ -57,14 +59,14 @@ class AbstractConnectionFactory extends BaseObject
      *
      * @return array
      */
-    private function parseUrl($parameters)
+    private function parseUrl($parameters): array
     {
         if (!$parameters['url']) {
             return $parameters;
         }
         $url = parse_url($parameters['url']);
         if ($url === false || !isset($url['scheme']) || $url['scheme'] !== 'amqp') {
-            throw new \InvalidArgumentException('Malformed parameter "url".');
+            throw new InvalidArgumentException('Malformed parameter "url".');
         }
         if (isset($url['host'])) {
             $parameters['host'] = urldecode($url['host']);

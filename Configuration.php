@@ -2,36 +2,38 @@
 
 namespace rickcy\rabbitmq;
 
+use Exception;
 use rickcy\rabbitmq\components\Consumer;
 use rickcy\rabbitmq\components\Producer;
 use rickcy\rabbitmq\components\Routing;
 use rickcy\rabbitmq\exceptions\InvalidConfigException;
 use PhpAmqpLib\Connection\AbstractConnection;
 use PhpAmqpLib\Connection\AMQPLazyConnection;
+use Yii;
 use yii\base\Component;
 use yii\helpers\ArrayHelper;
 
 /**
  *
- * @property \rickcy\rabbitmq\Configuration $config
+ * @property Configuration $config
  */
 class Configuration extends Component
 {
 
-    const CONNECTION_SERVICE_NAME = 'rabbit_mq.connection.%s';
-    const CONSUMER_SERVICE_NAME = 'rabbit_mq.consumer.%s';
-    const PRODUCER_SERVICE_NAME = 'rabbit_mq.producer.%s';
-    const ROUTING_SERVICE_NAME = 'rabbit_mq.routing';
-    const LOGGER_SERVICE_NAME = 'rabbit_mq.logger';
+    public const CONNECTION_SERVICE_NAME = 'rabbit_mq.connection.%s';
+    public const CONSUMER_SERVICE_NAME = 'rabbit_mq.consumer.%s';
+    public const PRODUCER_SERVICE_NAME = 'rabbit_mq.producer.%s';
+    public const ROUTING_SERVICE_NAME = 'rabbit_mq.routing';
+    public const LOGGER_SERVICE_NAME = 'rabbit_mq.logger';
 
-    const DEFAULT_CONNECTION_NAME = 'default';
-    const EXTENSION_CONTROLLER_ALIAS = 'rabbitmq';
+    public const DEFAULT_CONNECTION_NAME = 'default';
+    public const EXTENSION_CONTROLLER_ALIAS = 'rabbitmq';
 
     /**
      * Extension configuration default values
      * @var array
      */
-    const DEFAULTS = [
+    public const DEFAULTS = [
         'auto_declare' => false,
         'connections' => [
             [
@@ -93,7 +95,8 @@ class Configuration extends Component
                 'safe' => true,
                 'content_type' => 'text/plain',
                 'delivery_mode' => 2,
-                'serializer' => 'serialize',
+                'serializer' => 'json_encode',
+                'serializerParams' => null,
             ],
         ],
         'consumers' => [
@@ -109,7 +112,8 @@ class Configuration extends Component
                 'idle_timeout' => 0,
                 'idle_timeout_exit_code' => null,
                 'proceed_on_exception' => false,
-                'deserializer' => 'unserialize',
+                'deserializer' => 'json_decode',
+                'deserializerParams' => true,
             ],
         ],
         'logger' => [
@@ -120,7 +124,7 @@ class Configuration extends Component
         ],
     ];
 
-    public $auto_declare = null;
+    public $auto_declare;
     public $connections = [];
     public $producers = [];
     public $consumers = [];
@@ -134,7 +138,7 @@ class Configuration extends Component
     /**
      * Get passed configuration
      * @return Configuration
-     * @throws InvalidConfigException
+     * @throws Exception
      */
     public function getConfig(): Configuration
     {
@@ -151,51 +155,56 @@ class Configuration extends Component
     /**
      * Get connection service
      * @param string $connectionName
-     * @return AbstractConnection
+     * @return object|AbstractConnection
+     * @throws Exception
      */
-    public function getConnection(string $connectionName = ''): AbstractConnection
+    public function getConnection(string $connectionName = '')
     {
         if ('' === $connectionName) {
-            $connectionName = self::DEFAULT_CONNECTION_NAME;
+            $connectionName = static::DEFAULT_CONNECTION_NAME;
         }
 
-        return \Yii::$container->get(sprintf(self::CONNECTION_SERVICE_NAME, $connectionName));
+        return Yii::$container->get(sprintf(static::CONNECTION_SERVICE_NAME, $connectionName));
     }
 
     /**
      * Get producer service
      * @param string $producerName
-     * @return Producer
+     * @return object|Producer
+     * @throws Exception
      */
-    public function getProducer(string $producerName): Producer
+    public function getProducer(string $producerName)
     {
-        return \Yii::$container->get(sprintf(self::PRODUCER_SERVICE_NAME, $producerName));
+        return Yii::$container->get(sprintf(static::PRODUCER_SERVICE_NAME, $producerName));
     }
 
     /**
      * Get consumer service
      * @param string $consumerName
-     * @return Consumer
+     * @return object|Consumer
+     * @throws Exception
      */
-    public function getConsumer(string $consumerName): Consumer
+    public function getConsumer(string $consumerName)
     {
-        return \Yii::$container->get(sprintf(self::CONSUMER_SERVICE_NAME, $consumerName));
+        return Yii::$container->get(sprintf(static::CONSUMER_SERVICE_NAME, $consumerName));
     }
 
     /**
      * Get routing service
-     * @return Routing
-     */
-    public function getRouting(AbstractConnection $connection): Routing
+     * @param AbstractConnection $connection
+     * @return object|Routing
+     * @throws Exception
+ */
+    public function getRouting(AbstractConnection $connection)
     {
-        return \Yii::$container->get(Configuration::ROUTING_SERVICE_NAME, ['conn' => $connection]);
+        return Yii::$container->get(static::ROUTING_SERVICE_NAME, ['conn' => $connection]);
     }
 
     /**
      * Config validation
-     * @throws InvalidConfigException
+     * @throws Exception
      */
-    protected function validate()
+    protected function validate(): void
     {
         $this->validateTopLevel();
         $this->validateMultidimensional();
@@ -205,9 +214,9 @@ class Configuration extends Component
 
     /**
      * Validate multidimensional entries names
-     * @throws InvalidConfigException
+     * @throws Exception
      */
-    protected function validateMultidimensional()
+    protected function validateMultidimensional(): void
     {
         $multidimensional = [
             'connection' => $this->connections,
@@ -232,29 +241,29 @@ class Configuration extends Component
 
     /**
      * Validate top level options
-     * @throws InvalidConfigException
+     * @throws Exception
      */
-    protected function validateTopLevel()
+    protected function validateTopLevel(): void
     {
         if (($this->auto_declare !== null) && !is_bool($this->auto_declare)) {
-            throw new InvalidConfigException("Option `auto_declare` should be of type boolean.");
+            throw new InvalidConfigException('Option `auto_declare` should be of type boolean.');
         }
 
         if (!is_array($this->logger)) {
-            throw new InvalidConfigException("Option `logger` should be of type array.");
+            throw new InvalidConfigException('Option `logger` should be of type array.');
         }
 
-        $this->validateArrayFields($this->logger, self::DEFAULTS['logger']);
+        $this->validateArrayFields($this->logger, static::DEFAULTS['logger']);
     }
 
     /**
      * Validate required options
-     * @throws InvalidConfigException
+     * @throws Exception
      */
-    protected function validateRequired()
+    protected function validateRequired(): void
     {
         foreach ($this->connections as $connection) {
-            $this->validateArrayFields($connection, self::DEFAULTS['connections'][0]);
+            $this->validateArrayFields($connection, static::DEFAULTS['connections'][0]);
             if (!isset($connection['url']) && !isset($connection['host'])) {
                 throw new InvalidConfigException('Either `url` or `host` options required for configuring connection.');
             }
@@ -270,7 +279,7 @@ class Configuration extends Component
         }
 
         foreach ($this->exchanges as $exchange) {
-            $this->validateArrayFields($exchange, self::DEFAULTS['exchanges'][0]);
+            $this->validateArrayFields($exchange, static::DEFAULTS['exchanges'][0]);
             if (!isset($exchange['name'])) {
                 throw new InvalidConfigException('Exchange name should be specified.');
             }
@@ -284,10 +293,10 @@ class Configuration extends Component
             }
         }
         foreach ($this->queues as $queue) {
-            $this->validateArrayFields($queue, self::DEFAULTS['queues'][0]);
+            $this->validateArrayFields($queue, static::DEFAULTS['queues'][0]);
         }
         foreach ($this->bindings as $binding) {
-            $this->validateArrayFields($binding, self::DEFAULTS['bindings'][0]);
+            $this->validateArrayFields($binding, static::DEFAULTS['bindings'][0]);
             if (!isset($binding['exchange'])) {
                 throw new InvalidConfigException('Exchange name is required for binding.');
             }
@@ -305,7 +314,7 @@ class Configuration extends Component
             }
         }
         foreach ($this->producers as $producer) {
-            $this->validateArrayFields($producer, self::DEFAULTS['producers'][0]);
+            $this->validateArrayFields($producer, static::DEFAULTS['producers'][0]);
             if (!isset($producer['name'])) {
                 throw new InvalidConfigException('Producer name is required.');
             }
@@ -315,7 +324,7 @@ class Configuration extends Component
             if (isset($producer['safe']) && !is_bool($producer['safe'])) {
                 throw new InvalidConfigException('Producer option safe should be of type boolean.');
             }
-            if (!isset($producer['connection']) && !$this->isNameExist($this->connections, self::DEFAULT_CONNECTION_NAME)) {
+            if (!isset($producer['connection']) && !$this->isNameExist($this->connections, static::DEFAULT_CONNECTION_NAME)) {
                 throw new InvalidConfigException("Connection for producer `{$producer['name']}` is required.");
             }
             if (isset($producer['serializer']) && !is_callable($producer['serializer'])) {
@@ -323,14 +332,14 @@ class Configuration extends Component
             }
         }
         foreach ($this->consumers as $consumer) {
-            $this->validateArrayFields($consumer, self::DEFAULTS['consumers'][0]);
+            $this->validateArrayFields($consumer, static::DEFAULTS['consumers'][0]);
             if (!isset($consumer['name'])) {
                 throw new InvalidConfigException('Consumer name is required.');
             }
             if (isset($consumer['connection']) && !$this->isNameExist($this->connections, $consumer['connection'])) {
                 throw new InvalidConfigException("Connection `{$consumer['connection']}` defined in consumer doesn't configured in connections.");
             }
-            if (!isset($consumer['connection']) && !$this->isNameExist($this->connections, self::DEFAULT_CONNECTION_NAME)) {
+            if (!isset($consumer['connection']) && !$this->isNameExist($this->connections, static::DEFAULT_CONNECTION_NAME)) {
                 throw new InvalidConfigException("Connection for consumer `{$consumer['name']}` is required.");
             }
             if (!isset($consumer['callbacks']) || empty($consumer['callbacks'])) {
@@ -360,9 +369,9 @@ class Configuration extends Component
      * Validate config entry value
      * @param array $passed
      * @param array $required
-     * @throws InvalidConfigException
+     * @throws Exception
      */
-    protected function validateArrayFields(array $passed, array $required)
+    protected function validateArrayFields(array $passed, array $required): void
     {
         $undeclaredFields = array_diff_key($passed, $required);
         if (!empty($undeclaredFields)) {
@@ -374,9 +383,9 @@ class Configuration extends Component
     /**
      * Check entrees for duplicate names
      * @param array $keys
-     * @throws InvalidConfigException
+     * @throws Exception
      */
-    protected function validateDuplicateNames(array $keys)
+    protected function validateDuplicateNames(array $keys): void
     {
         foreach ($keys as $key) {
             $names = [];
@@ -394,9 +403,9 @@ class Configuration extends Component
 
     /**
      * Allow certain flexibility on connection configuration
-     * @throws InvalidConfigException
+     * @throws Exception
      */
-    protected function normalizeConnections()
+    protected function normalizeConnections(): void
     {
         if (empty($this->connections)) {
             throw new InvalidConfigException('Option `connections` should have at least one entry.');
@@ -404,19 +413,17 @@ class Configuration extends Component
         if (ArrayHelper::isAssociative($this->connections)) {
             $this->connections[0] = $this->connections;
         }
-        if (count($this->connections) === 1) {
-            if (!isset($this->connections[0]['name'])) {
-                $this->connections[0]['name'] = self::DEFAULT_CONNECTION_NAME;
-            }
+        if ((count($this->connections) === 1) && !isset($this->connections[0]['name'])) {
+            $this->connections[0]['name'] = static::DEFAULT_CONNECTION_NAME;
         }
     }
 
     /**
      * Merge passed config with extension defaults
      */
-    protected function completeWithDefaults()
+    protected function completeWithDefaults(): void
     {
-        $defaults = self::DEFAULTS;
+        $defaults = static::DEFAULTS;
         if (null === $this->auto_declare) {
             $this->auto_declare = $defaults['auto_declare'];
         }
@@ -443,9 +450,9 @@ class Configuration extends Component
      * @param string $name
      * @return bool
      */
-    private function isNameExist(array $multidimentional, string $name)
+    private function isNameExist(array $multidimentional, string $name): bool
     {
-        if ($name == '') {
+        if ($name === '') {
             foreach ($multidimentional as $item) {
                 if (!isset($item['name'])) {
                     return true;

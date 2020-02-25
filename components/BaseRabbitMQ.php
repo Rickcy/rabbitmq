@@ -2,18 +2,20 @@
 
 namespace rickcy\rabbitmq\components;
 
+use Exception;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AbstractConnection;
 use yii\base\BaseObject;
 
+
 /**
  *
- * @property \PhpAmqpLib\Channel\AMQPChannel $channel
+ * @property AMQPChannel $channel
  */
 abstract class BaseRabbitMQ extends BaseObject
 {
     /**
-     * @var \PhpAmqpLib\Connection\AbstractConnection
+     * @var AbstractConnection
      */
     protected $conn;
     protected $autoDeclare;
@@ -57,27 +59,35 @@ abstract class BaseRabbitMQ extends BaseObject
     }
 
     /**
+     * @param AMQPChannel $channel
+     */
+    public function setChannel(AMQPChannel $channel): void
+    {
+        $this->ch = $channel;
+    }
+
+    /**
      *
      */
-    public function close()
+    public function close(): void
     {
         if ($this->ch) {
             try {
                 $this->ch->close();
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // ignore on shutdown
             }
         }
         if ($this->conn && $this->conn->isConnected()) {
             try {
                 $this->conn->close();
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // ignore on shutdown
             }
         }
     }
 
-    public function renew()
+    public function renew(): void
     {
         if (!$this->conn->isConnected()) {
             return;
@@ -88,7 +98,7 @@ abstract class BaseRabbitMQ extends BaseObject
     /**
      * @return AMQPChannel
      */
-    public function getChannel()
+    public function getChannel(): AMQPChannel
     {
         if (empty($this->ch) || null === $this->ch->getChannelId()) {
             $this->ch = $this->conn->channel();

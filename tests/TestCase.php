@@ -3,6 +3,7 @@
 namespace rickcy\rabbitmq\tests;
 
 use rickcy\rabbitmq\DependencyInjection;
+use rickcy\rabbitmq\exceptions\InvalidConfigException;
 use Yii;
 use yii\helpers\ArrayHelper;
 
@@ -14,7 +15,7 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
      * Clean up after test.
      * By default the application created with [[mockApplication]] will be destroyed.
      */
-    protected function tearDown()
+    protected function tearDown() : void
     {
         parent::tearDown();
         $this->destroyApplication();
@@ -49,10 +50,10 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
      */
     protected function destroyApplication()
     {
-        if (\Yii::$app && \Yii::$app->has('session', true)) {
-            \Yii::$app->session->close();
+        if (Yii::$app && Yii::$app->has('session', true)) {
+            Yii::$app->session->close();
         }
-        \Yii::$app = null;
+        Yii::$app = null;
     }
 
     /**
@@ -123,12 +124,12 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
     /**
      * Load extension to test app instance
      * @param array $config
-     * @throws \rickcy\rabbitmq\exceptions\InvalidConfigException
+     * @throws \Exception
      */
-    protected function loadExtension(array $config)
+    protected function loadExtension(array $config): void
     {
         $this->mockApplication($config);
         $di = new DependencyInjection();
-        $di->bootstrap(\Yii::$app);
+        $di->bootstrap(Yii::$app);
     }
 }
